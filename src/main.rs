@@ -1,9 +1,12 @@
 mod lexer;
+mod ast;
+mod parser;
 
 use std::fs::File;
 use std::io::Read;
 use clap::Parser;
 use crate::lexer::{Tokenizer};
+use crate::parser::parse;
 
 #[derive(Parser)]
 struct Cli {
@@ -29,10 +32,10 @@ fn main() -> std::io::Result<()> {
         source
     };
 
-    let tokenizer = Tokenizer::new(source.as_str());
-    let tokens: Result<Vec<_>, _> = tokenizer.collect();
-
-    println!("{:?}", tokens);
+    let mut tokenizer = Tokenizer::new(source.as_str());
+    let ast = parse(&mut tokenizer).unwrap();
+    
+    println!("{:?}", ast);
 
     Ok(())
 }
