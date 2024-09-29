@@ -1,4 +1,5 @@
 use crate::ast::{Expression, Function, Program, Statement};
+use crate::CompilerError::ParserError;
 use crate::lexer::{Token, Tokenizer};
 
 macro_rules! expect_token {
@@ -19,12 +20,16 @@ type ParserResult<T> = Result<T, String>;
 pub fn parse(tokens: &mut Tokenizer) -> ParserResult<Program> {
     let function = parse_function(tokens)?;
 
+    if tokens.count() > 0 {
+        return Err("Extra token in the source".into());
+    }
+
     Ok(Program::new(function))
 }
 
 fn parse_function(tokens: &mut Tokenizer) -> ParserResult<Function> {
     if Token::KwInt != next_token(tokens)? {
-        return Err("Expected token 'int'".to_owned())
+        return Err("Expected token 'int'".to_owned());
     }
 
     let name = if let Token::Identifier(name) = next_token(tokens)? {
@@ -46,14 +51,14 @@ fn parse_function(tokens: &mut Tokenizer) -> ParserResult<Function> {
 }
 
 fn parse_statement(tokens: &mut Tokenizer) -> ParserResult<Statement> {
-    let statement= match next_token(tokens)? { 
+    let statement = match next_token(tokens)? {
         Token::KwReturn => {
             let expression = parse_expression(tokens)?;
-            Statement::Return { expr: Box::new(expression) }
+            Statement::Return { expr: expression }
         }
         token => { return Err(format!("Unexpected token {:?}", token)); }
     };
-    
+
     expect_token!(tokens, Token::Semicolon);
 
     Ok(statement)

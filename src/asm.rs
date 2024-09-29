@@ -16,16 +16,16 @@ impl Program {
 }
 
 #[derive(Debug)]
-pub(crate) struct Function {
+pub struct Function {
     name: String,
-    body: Statement,
+    instructions: Vec<Instruction>,
 }
 
 impl Function {
-    pub(crate) fn new(name: String, body: Statement) -> Function {
+    pub fn new(name: String, instructions: Vec<Instruction>) -> Self {
         Function {
             name,
-            body,
+            instructions,
         }
     }
 
@@ -33,17 +33,20 @@ impl Function {
         &self.name
     }
 
-    pub fn body(&self) -> &Statement {
-        &self.body
+    pub fn instructions(&self) -> &Vec<Instruction> {
+        &self.instructions
     }
 }
 
 #[derive(Debug)]
-pub(crate) enum Statement {
-    Return { expr: Expression }
+pub enum Instruction {
+    Mov { src: Operand, dest: Operand },
+    Ret,
 }
 
 #[derive(Debug)]
-pub(crate) enum Expression {
-    Constant(u64)
+pub enum Operand {
+    Imm(u64),
+    Register,
 }
+

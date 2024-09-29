@@ -26,8 +26,11 @@ pub struct Tokenizer<'a> {
     open_brace_regex: Regex,
     close_brace_regex: Regex,
     semicolon_regex: Regex,
-    input: &'a str
-    
+
+    line_comment_regex: Regex,
+    multiline_comment_regex: Regex,
+
+    input: &'a str,
 }
 
 impl<'a> Tokenizer<'a> {
@@ -44,6 +47,9 @@ impl<'a> Tokenizer<'a> {
             close_brace_regex: Regex::new(r"^}").unwrap(),
             semicolon_regex: Regex::new(r"^;").unwrap(),
 
+            line_comment_regex: Regex::new(r"^//[^\n]*\n").unwrap(),
+            multiline_comment_regex: Regex::new(r"^/\*.*\*/").unwrap(),
+
             input: &source,
         }
     }
@@ -53,60 +59,74 @@ impl Iterator for Tokenizer<'_> {
     type Item = Result<Token, String>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let input = self.input.trim_start();
-        if input.len() == 0 {
-            return None
-        }
+        loop {
+            let input = self.input.trim_start();
+            if input.len() == 0 {
+                return None;
+            }
 
-        if let Some(result) = self.identifier_regex.find(input) {
-            let identifier = result.as_str();
-            let (_, next) = input.split_at(result.len());
-            self.input = next;
+            if let Some(result) = self.multiline_comment_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+                continue;
+            }
 
-            let token = if self.kw_int_regex.is_match(identifier) {
-                Token::KwInt
-            } else if self.kw_return_regex.is_match(identifier) {
-                Token::KwReturn
-            } else if self.kw_void_regex.is_match(identifier) {
-                Token::KwVoid
+            if let Some(result) = self.line_comment_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+                continue;
+            }
+
+            if let Some(result) = self.identifier_regex.find(input) {
+                let identifier = result.as_str();
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                let token = if self.kw_int_regex.is_match(identifier) {
+                    Token::KwInt
+                } else if self.kw_return_regex.is_match(identifier) {
+                    Token::KwReturn
+                } else if self.kw_void_regex.is_match(identifier) {
+                    Token::KwVoid
+                } else {
+                    Token::Identifier(identifier.to_owned())
+                };
+
+                return Some(Ok(token));
+            } else if let Some(result) = self.constant_regex.find(input) {
+                let value = result.as_str();
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::Constant(u64::from_str(value).unwrap())));
+            } else if let Some(result) = self.open_brace_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::OpeningBrace));
+            } else if let Some(result) = self.close_brace_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::ClosingBrace));
+            } else if let Some(result) = self.open_parenthesis_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::OpenParenthesis));
+            } else if let Some(result) = self.semicolon_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::Semicolon));
+            } else if let Some(result) = self.close_parenthesis_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::CloseParenthesis));
             } else {
-                Token::Identifier(identifier.to_owned())
-            };
-
-            Some(Ok(token))
-        } else if let Some(result) = self.constant_regex.find(input) {
-            let value = result.as_str();
-            let (_, next) = input.split_at(result.len());
-            self.input = next;
-
-            Some(Ok(Token::Constant(u64::from_str(value).unwrap())))
-        } else if let Some(result) = self.open_brace_regex.find(input) {
-            let (_, next) = input.split_at(result.len());
-            self.input = next;
-
-            Some(Ok(Token::OpeningBrace))
-        } else if let Some(result) = self.close_brace_regex.find(input) {
-            let (_, next) = input.split_at(result.len());
-            self.input = next;
-
-            Some(Ok(Token::ClosingBrace))
-        } else if let Some(result) = self.open_parenthesis_regex.find(input) {
-            let (_, next) = input.split_at(result.len());
-            self.input = next;
-
-            Some(Ok(Token::OpenParenthesis))
-        } else if let Some(result) = self.semicolon_regex.find(input) {
-            let (_, next) = input.split_at(result.len());
-            self.input = next;
-
-            Some(Ok(Token::Semicolon))
-        } else if let Some(result) = self.close_parenthesis_regex.find(input) {
-            let (_, next) = input.split_at(result.len());
-            self.input = next;
-
-            Some(Ok(Token::CloseParenthesis))
-        } else {
-            Some(Err("Unknown token".to_owned()))
+                return Some(Err("Unknown token".to_owned()))
+            }
         }
     }
 }
