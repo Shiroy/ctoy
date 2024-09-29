@@ -5,6 +5,7 @@ mod asm;
 mod codegen;
 mod codewriter;
 mod emitter;
+mod tacky;
 
 use std::fs;
 use std::fs::File;
@@ -17,6 +18,7 @@ use crate::codewriter::CodeWriter;
 use crate::emitter::emit;
 use crate::lexer::{Tokenizer};
 use crate::parser::parse;
+use crate::tacky::TackEmitter;
 
 #[derive(Parser)]
 struct Cli {
@@ -28,6 +30,9 @@ struct Cli {
 
     #[arg(long)]
     codegen: bool,
+
+    #[arg(long)]
+    tacky: bool,
 
     program: String,
 }
@@ -112,7 +117,7 @@ fn main() -> Result<(), CompilerError> {
 
     let source = fs::read_to_string(file_set.preprocessed_source())?;
     fs::remove_file(file_set.preprocessed_source())?;
-    let mut tokenizer = Tokenizer::new(source.as_str());
+    let tokenizer = Tokenizer::new(source.as_str());
 
     if cli.lex {
         let tokens: Result<Vec<_>, _> = tokenizer.collect();
@@ -128,23 +133,30 @@ fn main() -> Result<(), CompilerError> {
         return Ok(());
     }
 
-    let instructions = codegen(&ast);
+    let mut ir_emitter = TackEmitter::new();
+    let ir = ir_emitter.emit_program(&ast);
 
-    if cli.codegen {
+    if cli.tacky {
         return Ok(());
     }
 
-    let mut writer = CodeWriter::new();
-    emit(&mut writer, &instructions);
-
-
-    println!("Output path: {:?}", file_set.assembly_file);
-    let mut output_file = File::create(file_set.assembly_file())?;
-    output_file.write_all(writer.as_str().as_bytes())?;
-
-    std::process::Command::new("gcc").args([file_set.assembly_file().to_str().unwrap(), "-o", file_set.executable().to_str().unwrap()]).output()?;
-
-    std::fs::remove_file(file_set.assembly_file)?;
+    // let instructions = codegen(&ast);
+    //
+    // if cli.codegen {
+    //     return Ok(());
+    // }
+    //
+    // let mut writer = CodeWriter::new();
+    // emit(&mut writer, &instructions);
+    //
+    //
+    // println!("Output path: {:?}", file_set.assembly_file);
+    // let mut output_file = File::create(file_set.assembly_file())?;
+    // output_file.write_all(writer.as_str().as_bytes())?;
+    //
+    // std::process::Command::new("gcc").args([file_set.assembly_file().to_str().unwrap(), "-o", file_set.executable().to_str().unwrap()]).output()?;
+    //
+    // std::fs::remove_file(file_set.assembly_file)?;
 
     Ok(())
 }
