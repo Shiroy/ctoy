@@ -13,6 +13,9 @@ pub enum Token {
     KwInt,
     KwReturn,
     KwVoid,
+    Hyphen,
+    TwoHyphens,
+    Tilde,
 }
 
 pub struct Tokenizer<'a> {
@@ -26,6 +29,9 @@ pub struct Tokenizer<'a> {
     open_brace_regex: Regex,
     close_brace_regex: Regex,
     semicolon_regex: Regex,
+    two_hyphens_regex: Regex,
+    hyphen_regex: Regex,
+    tilde_regex: Regex,
 
     input: &'a str,
 }
@@ -43,6 +49,9 @@ impl<'a> Tokenizer<'a> {
             open_brace_regex: Regex::new(r"^\{").unwrap(),
             close_brace_regex: Regex::new(r"^}").unwrap(),
             semicolon_regex: Regex::new(r"^;").unwrap(),
+            hyphen_regex: Regex::new(r"^-").unwrap(),
+            two_hyphens_regex: Regex::new(r"^--").unwrap(),
+            tilde_regex: Regex::new(r"^~").unwrap(),
 
             input: &source,
         }
@@ -106,6 +115,21 @@ impl Iterator for Tokenizer<'_> {
                 self.input = next;
 
                 return Some(Ok(Token::CloseParenthesis));
+            } else if let Some(result) = self.two_hyphens_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::TwoHyphens));
+            } else if let Some(result) = self.hyphen_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::Hyphen));
+            } else if let Some(result) = self.tilde_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::Tilde));
             } else {
                 return Some(Err("Unknown token".to_owned()))
             }
