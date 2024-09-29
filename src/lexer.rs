@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use regex::Regex;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Token {
     Identifier(String),
     OpenParenthesis,

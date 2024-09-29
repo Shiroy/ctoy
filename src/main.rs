@@ -122,7 +122,7 @@ fn main() -> Result<(), CompilerError> {
         };
     }
 
-    let ast = parse(&mut tokenizer).map_err(|err| CompilerError::ParserError(err))?;
+    let ast = parse(&mut tokenizer.peekable()).map_err(|err| CompilerError::ParserError(err))?;
 
     if cli.parse {
         return Ok(());

@@ -29,6 +29,7 @@ fn codegen_statement(statement: &ast::Statement) -> Vec<asm::Instruction> {
 
 fn codegen_expression(expr: &ast::Expression) -> asm::Operand {
     match expr {
-        ast::Expression::Constant(value) => asm::Operand::Imm(value.clone())
+        ast::Expression::Constant(value) => asm::Operand::Imm(value.clone()),
+        ast::Expression::Unary(_, _) => { todo!() }
     }
 }

@@ -45,5 +45,12 @@ pub(crate) enum Statement {
 
 #[derive(Debug)]
 pub(crate) enum Expression {
-    Constant(u64)
+    Constant(u64),
+    Unary(UnaryOperator, Box<Expression>),
+}
+
+#[derive(Debug)]
+pub(crate) enum UnaryOperator {
+    Complement,
+    Negate,
 }
