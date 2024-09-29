@@ -27,9 +27,6 @@ pub struct Tokenizer<'a> {
     close_brace_regex: Regex,
     semicolon_regex: Regex,
 
-    line_comment_regex: Regex,
-    multiline_comment_regex: Regex,
-
     input: &'a str,
 }
 
@@ -47,9 +44,6 @@ impl<'a> Tokenizer<'a> {
             close_brace_regex: Regex::new(r"^}").unwrap(),
             semicolon_regex: Regex::new(r"^;").unwrap(),
 
-            line_comment_regex: Regex::new(r"^//[^\n]*\n").unwrap(),
-            multiline_comment_regex: Regex::new(r"^/\*.*\*/").unwrap(),
-
             input: &source,
         }
     }
@@ -63,18 +57,6 @@ impl Iterator for Tokenizer<'_> {
             let input = self.input.trim_start();
             if input.len() == 0 {
                 return None;
-            }
-
-            if let Some(result) = self.multiline_comment_regex.find(input) {
-                let (_, next) = input.split_at(result.len());
-                self.input = next;
-                continue;
-            }
-
-            if let Some(result) = self.line_comment_regex.find(input) {
-                let (_, next) = input.split_at(result.len());
-                self.input = next;
-                continue;
             }
 
             if let Some(result) = self.identifier_regex.find(input) {
