@@ -1,6 +1,5 @@
-use crate::tacky;
 use crate::asm;
-use crate::asm::{Instruction, Operand};
+use crate::tacky;
 
 pub fn codegen(program: &tacky::Program) -> asm::Program {
     asm::Program::new(
@@ -71,27 +70,3 @@ fn codegen_unary_op(unary_op: &tacky::UnaryOperator) -> asm::UnaryOperator {
         tacky::UnaryOperator::Complement => asm::UnaryOperator::Not
     }
 }
-
-// fn replace_pseudo_register(program: &mut asm::Program) {
-//     replace_pseudo_register_function(&mut program.function());
-// }
-//
-// fn replace_pseudo_register_function(function: &mut asm::Function) {
-//
-// }
-//
-// fn replace_pseudo_register_instruction(instruction: &mut asm::Instruction) {
-//     match instruction {
-//         Instruction::Mov { src, dest } => {}
-//         Instruction::Unary(_, _) => {}
-//         Instruction::AllocateStack(_) => {}
-//         Instruction::Ret => {}
-//     }
-// }
-//
-// fn replace_pseudo_register_operand(operand: &Operand) {
-//     match operand {
-//         Operand::Pseudo(identifier) => { Operand::Stack(4) },
-//         rem =>
-//     }
-// }

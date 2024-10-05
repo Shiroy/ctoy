@@ -1,8 +1,6 @@
-use std::iter::Peekable;
-use std::ops::Deref;
 use crate::ast::{Expression, Function, Program, Statement, UnaryOperator};
-use crate::CompilerError::ParserError;
 use crate::lexer::{Token, Tokenizer};
+use std::iter::Peekable;
 
 pub type TokenStream<'a> = Peekable<Tokenizer<'a>>;
 

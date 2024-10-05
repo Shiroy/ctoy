@@ -10,12 +10,15 @@ mod stack_allocator;
 mod asm_pass;
 
 use std::fs;
-use std::io::{Error, Read, Write};
+use std::fs::File;
+use std::io::{Error, Write};
 use std::path::PathBuf;
 use std::process::{ExitCode, Termination};
 use clap::Parser;
 use crate::asm_pass::{AsmPass, PseudoRegister, InvalidMovRewrite};
 use crate::codegen::codegen;
+use crate::codewriter::CodeWriter;
+use crate::emitter::emit;
 //use crate::emitter::emit;
 use crate::lexer::Tokenizer;
 use crate::parser::parse;
@@ -158,18 +161,20 @@ fn main() -> Result<(), CompilerError> {
         return Ok(());
     }
 
-    //
-    // let mut writer = CodeWriter::new();
-    // emit(&mut writer, &instructions);
-    //
-    //
-    // println!("Output path: {:?}", file_set.assembly_file);
-    // let mut output_file = File::create(file_set.assembly_file())?;
-    // output_file.write_all(writer.as_str().as_bytes())?;
-    //
-    // std::process::Command::new("gcc").args([file_set.assembly_file().to_str().unwrap(), "-o", file_set.executable().to_str().unwrap()]).output()?;
-    //
-    // std::fs::remove_file(file_set.assembly_file)?;
+
+    let mut writer = CodeWriter::new();
+    emit(&mut writer, &instructions);
+
+
+    println!("Output path: {:?}", file_set.assembly_file);
+    let mut output_file = File::create(file_set.assembly_file())?;
+    output_file.write_all(writer.as_str().as_bytes())?;
+
+    let output = std::process::Command::new("gcc").args(["-arch", "x86_64", file_set.assembly_file().to_str().unwrap(), "-o", file_set.executable().to_str().unwrap()]).output()?;
+
+    eprintln!("{}", String::from_utf8(output.stderr).unwrap());
+
+    //fs::remove_file(file_set.assembly_file)?;
 
     Ok(())
 }

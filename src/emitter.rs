@@ -1,42 +1,78 @@
-// use crate::asm;
-// use crate::asm::{Instruction, Operand};
-// use crate::codewriter::{CodeWriter, LineWriter};
-// 
-// pub fn emit(writer: &mut CodeWriter, program: &asm::Program) {
-//     emit_function(writer, program.function());
-//     writer.blank_line();
-//     writer.write_line(".section .note.GNU-stack,\"\",@progbits");
-// }
-// 
-// fn emit_function(writer: &mut CodeWriter, function: &asm::Function) {
-//     writer.write_line(format!(".global {}", function.name()).as_str());
-//     writer.write_line(format!("{}:", function.name()).as_str());
-//     writer.write_block(|writer| {
-//         function.instructions().iter().for_each(|inst| {
-//             emit_instruction(writer, inst);
-//         })
-//     })
-// }
-// 
-// fn emit_instruction(writer: &mut CodeWriter, instruction: &Instruction) {
-//     match instruction {
-//         Instruction::Mov { src, dest } => {
-//             writer.line(|writer| {
-//                 writer.write("movl ");
-//                 emit_operand(writer, src);
-//                 writer.write(", ");
-//                 emit_operand(writer, dest);
-//             })
-//         }
-//         Instruction::Ret => {
-//             writer.write_line("ret")
-//         }
-//     }
-// }
-// 
-// fn emit_operand(writer: &mut LineWriter, operand: &Operand) {
-//     match operand {
-//         Operand::Register => writer.write("%eax"),
-//         Operand::Imm(value) => writer.write(format!("${}", value).as_str())
-//     }
-// }
+use crate::asm;
+use crate::asm::{Instruction, Operand, Register, UnaryOperator};
+use crate::codewriter::{CodeWriter, LineWriter};
+
+pub fn emit(writer: &mut CodeWriter, program: &asm::Program) {
+    emit_function(writer, program.function());
+    writer.blank_line();
+    //writer.write_line(".section .note.GNU-stack,\"\",@progbits");
+}
+
+fn emit_function(writer: &mut CodeWriter, function: &asm::Function) {
+    let function_name = if function.name() == "main" {
+        "_main"
+    } else { 
+        function.name() 
+    };
+    
+    writer.write_line(format!(".global {}", function_name).as_str());
+    writer.write_line(format!("{}:", function_name).as_str());
+    writer.write_block(|writer| {
+        writer.write_line("pushq %rbp");
+        writer.write_line("movq %rsp, %rbp");
+        function.instructions().iter().for_each(|inst| {
+            emit_instruction(writer, inst);
+        })
+    })
+}
+
+fn emit_instruction(writer: &mut CodeWriter, instruction: &Instruction) {
+    match instruction {
+        Instruction::Mov { src, dest } => {
+            writer.line(|writer| {
+                writer.write("movl ");
+                emit_operand(writer, src);
+                writer.write(", ");
+                emit_operand(writer, dest);
+            })
+        }
+        Instruction::Ret => {
+            writer.write_line("movq %rbp, %rsp");
+            writer.write_line("popq %rbp");
+            writer.write_line("ret")
+        }
+        Instruction::Unary(op, operand) => {
+            writer.line(|writer| {
+                emit_unary_operator(writer, op);
+                writer.write(" ");
+                emit_operand(writer, operand);
+            })
+        }
+        Instruction::AllocateStack(size) => {
+            writer.write_line(format!("subq ${}, %rsp", size).as_str());
+        }
+    }
+}
+
+fn emit_unary_operator(writer: &mut LineWriter, operator: &UnaryOperator) {
+    match operator {
+        UnaryOperator::Neg => writer.write("negl"),
+        UnaryOperator::Not => writer.write("notl"),
+    }
+}
+
+fn emit_operand(writer: &mut LineWriter, operand: &Operand) {
+    match operand {
+        Operand::Register(register) => emit_register(writer, register),
+        Operand::Imm(value) => writer.write(format!("${}", value).as_str()),
+        Operand::Stack(offset) => writer.write(format!("{}(%rbp)", offset).as_str()),
+        Operand::Pseudo(_) => unreachable!("Pseudo registers should have been removed in the PseudoRegister pass"),
+    }
+}
+
+fn emit_register(writer: &mut LineWriter, register: &Register) {
+    match register {
+        Register::AX => writer.write("%eax"),
+        Register::R10 => writer.write("%r10d"),
+    }
+}
