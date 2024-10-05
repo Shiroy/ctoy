@@ -8,20 +8,16 @@ mod emitter;
 mod tacky;
 mod stack_allocator;
 mod asm_pass;
-mod asm_pass_pseudo_register;
 
 use std::fs;
-use std::fs::File;
 use std::io::{Error, Read, Write};
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::process::{ExitCode, Termination};
 use clap::Parser;
-use crate::asm_pass::AsmPass;
-use crate::asm_pass_pseudo_register::AsmPassPseudoRegister;
+use crate::asm_pass::{AsmPass, PseudoRegister, InvalidMovRewrite};
 use crate::codegen::codegen;
-use crate::codewriter::CodeWriter;
 //use crate::emitter::emit;
-use crate::lexer::{Tokenizer};
+use crate::lexer::Tokenizer;
 use crate::parser::parse;
 use crate::tacky::TackEmitter;
 
@@ -149,7 +145,8 @@ fn main() -> Result<(), CompilerError> {
         let asm = codegen(&ir);
 
         let asm_passes: Vec<Box<dyn AsmPass>> = vec![
-            Box::new(AsmPassPseudoRegister::new())
+            Box::new(PseudoRegister::new()),
+            Box::new(InvalidMovRewrite::new())
         ];
 
         asm_passes.into_iter().fold(asm, |instructions, mut pass| { pass.run(instructions) })

@@ -6,11 +6,11 @@ use crate::stack_allocator::StackAllocator;
 /**
 This pass looks for all the pseudo register references in the asm tree and replace them with a stack offset.
 */
-pub struct AsmPassPseudoRegister {
+pub struct PseudoRegister {
     stack_allocator: StackAllocator
 }
 
-impl AsmPassPseudoRegister {
+impl PseudoRegister {
     pub fn new() -> Self {
         Self {
             stack_allocator: StackAllocator::new()
@@ -45,7 +45,7 @@ impl AsmPassPseudoRegister {
     }
 }
 
-impl AsmPass for AsmPassPseudoRegister {
+impl AsmPass for PseudoRegister {
     fn run(&mut self, program: Program) -> Program {
         let function = self.handle_function(program.into_function());
         Program::from_function(function)
