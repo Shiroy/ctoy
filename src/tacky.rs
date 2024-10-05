@@ -6,10 +6,26 @@ pub struct Program {
     function: Function,
 }
 
+impl Program {
+    pub fn function(&self) -> &Function {
+        &self.function
+    }
+}
+
 #[derive(Debug)]
 pub struct Function {
     identifier: String,
     instructions: Vec<Instruction>,
+}
+
+impl Function {
+    pub fn identifier(&self) -> &str {
+        &self.identifier
+    }
+
+    pub fn instructions(&self) -> &Vec<Instruction> {
+        &self.instructions
+    }
 }
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
 /* Test */
 
 int main(void) {
-    return -(~(-456));
+    return ~(-2);
 }

@@ -10,8 +10,18 @@ impl Program {
         }
     }
 
+    pub fn from_function(function: Function) -> Self {
+        Self {
+            function
+        }
+    }
+
     pub fn function(&self) -> &Function {
         &self.function
+    }
+
+    pub fn into_function(self) -> Function {
+        self.function
     }
 }
 
@@ -36,17 +46,38 @@ impl Function {
     pub fn instructions(&self) -> &Vec<Instruction> {
         &self.instructions
     }
+
+    pub fn decompose(self) -> (String, Vec<Instruction>) {
+        (self.name, self.instructions)
+    }
 }
 
 #[derive(Debug)]
 pub enum Instruction {
     Mov { src: Operand, dest: Operand },
+    Unary(UnaryOperator, Operand),
+    AllocateStack(i64),
     Ret,
 }
 
 #[derive(Debug)]
+pub enum UnaryOperator {
+    Neg,
+    Not,
+}
+
+
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Operand {
     Imm(u64),
-    Register,
+    Register(Register),
+    Pseudo(String),
+    Stack(i64),
+}
+
+#[derive(Debug, Eq, PartialEq, Clone)]
+pub enum Register {
+    AX,
+    R10,
 }
 
