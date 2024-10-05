@@ -9,20 +9,19 @@ mod tacky;
 mod stack_allocator;
 mod asm_pass;
 
+use crate::asm_pass::{AsmPass, BinaryOperation, InvalidMovRewrite, PseudoRegister};
+use crate::codegen::codegen;
+use crate::codewriter::CodeWriter;
+use crate::emitter::emit;
+use crate::lexer::Tokenizer;
+use crate::parser::parse;
+use crate::tacky::TackEmitter;
+use clap::Parser;
 use std::fs;
 use std::fs::File;
 use std::io::{Error, Write};
 use std::path::PathBuf;
 use std::process::{ExitCode, Termination};
-use clap::Parser;
-use crate::asm_pass::{AsmPass, PseudoRegister, InvalidMovRewrite};
-use crate::codegen::codegen;
-use crate::codewriter::CodeWriter;
-use crate::emitter::emit;
-//use crate::emitter::emit;
-use crate::lexer::Tokenizer;
-use crate::parser::parse;
-use crate::tacky::TackEmitter;
 
 #[derive(Parser)]
 struct Cli {
@@ -126,7 +125,10 @@ fn main() -> Result<(), CompilerError> {
     if cli.lex {
         let tokens: Result<Vec<_>, _> = tokenizer.collect();
         return match tokens {
-            Ok(_) => Ok(()),
+            Ok(tokens) => {
+                println!("{:#?}", tokens);
+                Ok(())
+            }
             Err(err) => Err(CompilerError::LexerError(err))
         };
     }
@@ -134,6 +136,7 @@ fn main() -> Result<(), CompilerError> {
     let ast = parse(&mut tokenizer.peekable()).map_err(|err| CompilerError::ParserError(err))?;
 
     if cli.parse {
+        println!("{:#?}", ast);
         return Ok(());
     }
 
@@ -141,6 +144,7 @@ fn main() -> Result<(), CompilerError> {
     let ir = ir_emitter.emit_program(&ast);
 
     if cli.tacky {
+        println!("{:#?}", ir);
         return Ok(());
     }
 
@@ -149,15 +153,15 @@ fn main() -> Result<(), CompilerError> {
 
         let asm_passes: Vec<Box<dyn AsmPass>> = vec![
             Box::new(PseudoRegister::new()),
-            Box::new(InvalidMovRewrite::new())
+            Box::new(InvalidMovRewrite::new()),
+            Box::new(BinaryOperation::new())
         ];
 
         asm_passes.into_iter().fold(asm, |instructions, mut pass| { pass.run(instructions) })
     };
 
-    println!("{:#?}", instructions);
-
     if cli.codegen {
+        println!("{:#?}", instructions);
         return Ok(());
     }
 
@@ -174,7 +178,7 @@ fn main() -> Result<(), CompilerError> {
 
     eprintln!("{}", String::from_utf8(output.stderr).unwrap());
 
-    //fs::remove_file(file_set.assembly_file)?;
+    fs::remove_file(file_set.assembly_file)?;
 
     Ok(())
 }

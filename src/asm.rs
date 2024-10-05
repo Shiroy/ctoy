@@ -52,18 +52,28 @@ impl Function {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Instruction {
     Mov { src: Operand, dest: Operand },
     Unary(UnaryOperator, Operand),
+    Binary(BinaryOperator, Operand, Operand),
+    Idiv(Operand),
+    Cdq,
     AllocateStack(i64),
     Ret,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum UnaryOperator {
     Neg,
     Not,
+}
+
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
+pub enum BinaryOperator {
+    Add,
+    Sub,
+    Mul,
 }
 
 
@@ -78,6 +88,8 @@ pub enum Operand {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Register {
     AX,
+    DX,
     R10,
+    R11,
 }
 

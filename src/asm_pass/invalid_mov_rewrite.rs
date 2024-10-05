@@ -22,13 +22,14 @@ impl InvalidMovRewrite {
                         vec![
                             Instruction::Mov {
                                 src: Operand::Stack(offset_src),
-                                dest: Operand::Register(Register::R10) },
+                                dest: Operand::Register(Register::R10)
+                            },
                             Instruction::Mov {
                                 src: Operand::Register(Register::R10),
                                 dest: Operand::Stack(offset_dst),
                             }
                         ]
-                    },
+                    }
                     (src, dest) => vec![Instruction::Mov { src, dest }]
                 }
             }

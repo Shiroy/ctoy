@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use regex::Regex;
+use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Token {
@@ -16,6 +16,11 @@ pub enum Token {
     Hyphen,
     TwoHyphens,
     Tilde,
+
+    Plus,
+    Asterisk,
+    ForwardSlash,
+    Percent,
 }
 
 pub struct Tokenizer<'a> {
@@ -32,6 +37,10 @@ pub struct Tokenizer<'a> {
     two_hyphens_regex: Regex,
     hyphen_regex: Regex,
     tilde_regex: Regex,
+    plus_regex: Regex,
+    asterisk_regex: Regex,
+    forward_slash_regex: Regex,
+    percent_regex: Regex,
 
     input: &'a str,
 }
@@ -52,6 +61,10 @@ impl<'a> Tokenizer<'a> {
             hyphen_regex: Regex::new(r"^-").unwrap(),
             two_hyphens_regex: Regex::new(r"^--").unwrap(),
             tilde_regex: Regex::new(r"^~").unwrap(),
+            plus_regex: Regex::new(r"^\+").unwrap(),
+            asterisk_regex: Regex::new(r"^\*").unwrap(),
+            forward_slash_regex: Regex::new(r"^/").unwrap(),
+            percent_regex: Regex::new(r"^%").unwrap(),
 
             input: &source,
         }
@@ -130,6 +143,23 @@ impl Iterator for Tokenizer<'_> {
                 self.input = next;
 
                 return Some(Ok(Token::Tilde));
+            } else if let Some(result) = self.plus_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+
+                return Some(Ok(Token::Plus));
+            } else if let Some(result) = self.asterisk_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+                return Some(Ok(Token::Asterisk));
+            } else if let Some(result) = self.forward_slash_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+                return Some(Ok(Token::ForwardSlash));
+            } else if let Some(result) = self.percent_regex.find(input) {
+                let (_, next) = input.split_at(result.len());
+                self.input = next;
+                return Some(Ok(Token::Percent));
             } else {
                 return Some(Err("Unknown token".to_owned()))
             }

@@ -7,7 +7,7 @@ use crate::stack_allocator::StackAllocator;
 This pass looks for all the pseudo register references in the asm tree and replace them with a stack offset.
 */
 pub struct PseudoRegister {
-    stack_allocator: StackAllocator
+    stack_allocator: StackAllocator,
 }
 
 impl PseudoRegister {
@@ -28,18 +28,22 @@ impl PseudoRegister {
 
     fn handle_instruction(&mut self, instruction: Instruction) -> Instruction {
         match instruction {
-            Instruction::Mov { src, dest } => { Instruction::Mov {
-                src: self.handle_operand(src),
-                dest : self.handle_operand(dest)
-            } },
-            Instruction::Unary(operator, operand) => { Instruction::Unary(operator, self.handle_operand(operand)) },
+            Instruction::Mov { src, dest } => {
+                Instruction::Mov {
+                    src: self.handle_operand(src),
+                    dest: self.handle_operand(dest),
+                }
+            }
+            Instruction::Unary(operator, operand) => { Instruction::Unary(operator, self.handle_operand(operand)) }
+            Instruction::Binary(operator, src, dst) => { Instruction::Binary(operator, self.handle_operand(src), self.handle_operand(dst)) }
+            Instruction::Idiv(operand) => { Instruction::Idiv(self.handle_operand(operand)) }
             instruction => instruction
         }
     }
 
     fn handle_operand(&mut self, operand: Operand) -> Operand {
         match operand {
-            Operand::Pseudo(pseudo_register) => { Operand::Stack(self.stack_allocator.get_stack_offset(pseudo_register.as_str())) },
+            Operand::Pseudo(pseudo_register) => { Operand::Stack(self.stack_allocator.get_stack_offset(pseudo_register.as_str())) }
             operand => operand
         }
     }

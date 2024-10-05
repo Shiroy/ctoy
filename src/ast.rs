@@ -45,12 +45,28 @@ pub(crate) enum Statement {
 
 #[derive(Debug)]
 pub(crate) enum Expression {
+    Factor(Factor),
+    Binary { left: Box<Expression>, operator: BinaryOperator, right: Box<Expression> },
+}
+
+#[derive(Debug)]
+pub(crate) enum Factor {
     Constant(u64),
-    Unary(UnaryOperator, Box<Expression>),
+    Unary(UnaryOperator, Box<Factor>),
+    Expression(Box<Expression>),
 }
 
 #[derive(Debug)]
 pub(crate) enum UnaryOperator {
     Complement,
     Negate,
+}
+
+#[derive(Debug)]
+pub(crate) enum BinaryOperator {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
 }

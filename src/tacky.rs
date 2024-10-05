@@ -32,6 +32,7 @@ impl Function {
 pub enum Instruction {
     Return { val: Value },
     Unary { operator: UnaryOperator, src: Value, dst: Value },
+    Binary { operator: BinaryOperator, lhs: Value, rhs: Value, dst: Value },
 }
 
 #[derive(Clone, Debug)]
@@ -44,6 +45,15 @@ pub enum Value {
 pub enum UnaryOperator {
     Complement,
     Negate,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum BinaryOperator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Remainder,
 }
 
 struct VariableNameGenerator {
@@ -102,11 +112,35 @@ impl TackEmitter {
         }
     }
 
-    fn emit_expression(&mut self, expr: &ast::Expression, instructions: &mut Vec<Instruction>) -> Value {
-        match expr {
-            ast::Expression::Constant(value) => Value::Constant(value.clone()),
-            ast::Expression::Unary(op, expr) => {
-                let src = self.emit_expression(expr, instructions);
+    fn emit_expression(&mut self, expression: &ast::Expression, instructions: &mut Vec<Instruction>) -> Value {
+        match expression {
+            ast::Expression::Factor(factor) => {
+                self.emit_factor(factor, instructions)
+            }
+            ast::Expression::Binary { left, right, operator } => {
+                let left_result = self.emit_expression(left, instructions);
+                let right_result = self.emit_expression(right, instructions);
+                let operator = self.emit_binary_operator(operator);
+
+                let result = Value::Var { identifier: self.variable_name_generator.make_temporary() };
+
+                instructions.push(Instruction::Binary {
+                    lhs: left_result,
+                    rhs: right_result,
+                    operator,
+                    dst: result.clone(),
+                });
+
+                result
+            }
+        }
+    }
+
+    fn emit_factor(&mut self, factor: &ast::Factor, instructions: &mut Vec<Instruction>) -> Value {
+        match factor {
+            ast::Factor::Constant(value) => Value::Constant(value.clone()),
+            ast::Factor::Unary(op, unary_factor) => {
+                let src = self.emit_factor(unary_factor, instructions);
                 let dst = Value::Var { identifier: self.variable_name_generator.make_temporary() };
                 let operator = self.emit_unary_operator(op);
 
@@ -118,6 +152,9 @@ impl TackEmitter {
 
                 dst
             }
+            ast::Factor::Expression(expr) => {
+                self.emit_expression(expr, instructions)
+            }
         }
     }
 
@@ -125,6 +162,16 @@ impl TackEmitter {
         match operator {
             ast::UnaryOperator::Complement => UnaryOperator::Complement,
             ast::UnaryOperator::Negate => UnaryOperator::Negate
+        }
+    }
+
+    fn emit_binary_operator(&self, operator: &ast::BinaryOperator) -> BinaryOperator {
+        match operator {
+            ast::BinaryOperator::Add => BinaryOperator::Add,
+            ast::BinaryOperator::Sub => BinaryOperator::Subtract,
+            ast::BinaryOperator::Mul => BinaryOperator::Multiply,
+            ast::BinaryOperator::Div => BinaryOperator::Divide,
+            ast::BinaryOperator::Rem => BinaryOperator::Remainder,
         }
     }
 }
